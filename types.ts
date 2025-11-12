@@ -6,6 +6,9 @@ export enum Perimeter {
   MANAGER_SUPPORT = "Manager Support",
   PEER_SUPPORT = "Peer Support",
   WORKPLACE_ENABLERS = "Workplace Enablers & Barriers",
+  STRATEGIC_THINKING = "Strategic Thinking",
+  TEAM_LEADERSHIP = "Team Leadership & Motivation",
+  CONFLICT_RESOLUTION = "Conflict Resolution",
 }
 
 export interface Question {
@@ -28,9 +31,12 @@ export interface Employee {
   id: number;
   name: string;
   role: string;
+  department: string;
   training: string;
   proficiency: ProficiencyData[];
   managerId?: number;
+  trainingEffectiveness?: number; // 1-5 scale rating for the training itself
+  trainerName?: string;
 }
 
 export enum Status {
@@ -76,7 +82,7 @@ export interface ActionPlan {
   actionSteps: ActionStep[];
 }
 
-export type UserRole = 'Manager' | 'Employee' | 'HR';
+export type UserRole = 'Manager' | 'Employee' | 'HR' | 'Higher Management';
 
 export interface User {
   id: number;

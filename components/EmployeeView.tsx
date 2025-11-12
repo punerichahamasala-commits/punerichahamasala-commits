@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Employee, Status, Analysis, ActionPlan, ActionStep, User } from '../types';
+import { Employee, Status, Analysis, ActionPlan, ActionStep, User, UserRole } from '../types';
 import { MOCK_EMPLOYEES } from '../constants';
 import ProficiencyChart from './ProficiencyChart';
 import StatusIndicator from './StatusIndicator';
@@ -8,9 +8,11 @@ import { generateProficiencyAnalysis } from '../services/geminiService';
 import LoadingSpinner from './LoadingSpinner';
 import QuestionnaireDetails from './QuestionnaireDetails';
 import ActionPlanCard from './ActionPlanCard';
+import EditableStarRating from './EditableStarRating';
 
 interface EmployeeViewProps {
-    currentUser: User;
+    employeeId: number;
+    currentUserRole: UserRole;
 }
 
 const calculateOverallScore = (employee: Employee): number => {
@@ -29,10 +31,10 @@ const getStatus = (score: number): Status => {
 // Simple in-memory cache for analysis
 const analysisCache = new Map<number, Analysis | null>();
 
-const EmployeeView: React.FC<EmployeeViewProps> = ({ currentUser }) => {
+const EmployeeView: React.FC<EmployeeViewProps> = ({ employeeId, currentUserRole }) => {
     const employeeData = useMemo(() => 
-        MOCK_EMPLOYEES.find(e => e.id === currentUser.employeeId),
-        [currentUser.employeeId]
+        MOCK_EMPLOYEES.find(e => e.id === employeeId),
+        [employeeId]
     );
 
     const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -100,7 +102,20 @@ const EmployeeView: React.FC<EmployeeViewProps> = ({ currentUser }) => {
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">{employeeData.name}</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">{employeeData.role}</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Training: <span className="font-semibold">{employeeData.training}</span></p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Department: <span className="font-semibold">{employeeData.department}</span></p>
+                        <hr className="my-3 border-slate-200 dark:border-slate-700" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Training: <span className="font-semibold">{employeeData.training}</span></p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Trainer: <span className="font-semibold">{employeeData.trainerName || 'N/A'}</span></p>
+                         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Training Effectiveness Rating:</p>
+                            <div className="mt-1">
+                                <EditableStarRating 
+                                    score={employeeData.trainingEffectiveness || 0}
+                                    onScoreChange={() => {}} // no-op
+                                    isReadOnly={true}
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
                         <h3 className="text-lg font-semibold text-center mb-4">My Proficiency</h3>
@@ -126,7 +141,7 @@ const EmployeeView: React.FC<EmployeeViewProps> = ({ currentUser }) => {
                         </h3>
                         {isLoading && <div className="flex justify-center items-center h-full min-h-[300px]"><LoadingSpinner /></div>}
                         {error && <div className="text-red-500 bg-red-100 dark:bg-red-900/50 p-4 rounded-lg">{error}</div>}
-                        {analysis && !isLoading && <AnalysisCard analysis={analysis} currentUserRole="Employee" />}
+                        {analysis && !isLoading && <AnalysisCard analysis={analysis} currentUserRole={currentUserRole} />}
                     </div>
                     
                     {actionPlan && !isLoading && (

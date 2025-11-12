@@ -10,6 +10,7 @@ import QuestionnaireDetails from './QuestionnaireDetails';
 import ComparisonView from './ComparisonView';
 import { exportToCSV } from '../utils/csvExporter';
 import ActionPlanCard from './ActionPlanCard';
+import EditableStarRating from './EditableStarRating';
 
 interface ManagerViewProps {
     currentUser: User;
@@ -29,9 +30,11 @@ const getStatus = (score: number): Status => {
 };
 
 const ManagerView: React.FC<ManagerViewProps> = ({ currentUser }) => {
+    const [employeesData, setEmployeesData] = useState<Employee[]>(MOCK_EMPLOYEES);
+    
     const managedEmployees = useMemo(() => 
-        MOCK_EMPLOYEES.filter(e => currentUser.managesIds?.includes(e.id)),
-        [currentUser.managesIds]
+        employeesData.filter(e => currentUser.managesIds?.includes(e.id)),
+        [currentUser.managesIds, employeesData]
     );
 
     const managedRoles = useMemo(() => 
@@ -100,7 +103,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({ currentUser }) => {
             setSelectedEmployee(managedEmployees[0]);
             setSelectedRole(managedRoles[0]);
         }
-    }, [managedEmployees, managedRoles]);
+    }, [currentUser.id]); // Rerun when manager changes
 
     useEffect(() => {
         if (viewMode === 'single' && selectedEmployee) {
@@ -149,12 +152,27 @@ const ManagerView: React.FC<ManagerViewProps> = ({ currentUser }) => {
         const updatedSteps = [...actionPlan.actionSteps];
         updatedSteps[stepIndex] = { ...updatedSteps[stepIndex], status: newStatus };
         
-        setActionPlan({
+        const newActionPlan = {
             ...actionPlan,
             actionSteps: updatedSteps,
-        });
+        };
+        setActionPlan(newActionPlan);
+        setActionPlanCache(prev => new Map(prev).set(actionPlan.employeeId, newActionPlan));
     };
     
+    const handleEffectivenessChange = (newScore: number) => {
+        if (!selectedEmployee) return;
+
+        const updatedEmployees = employeesData.map(emp =>
+            emp.id === selectedEmployee.id
+                ? { ...emp, trainingEffectiveness: newScore }
+                : emp
+        );
+        setEmployeesData(updatedEmployees);
+        
+        setSelectedEmployee(prev => prev ? { ...prev, trainingEffectiveness: newScore } : null);
+    };
+
     const handleExport = () => {
         if (viewMode === 'single') {
             const fileName = `proficiency-report-${selectedEmployee.name.replace(/\s/g, '_')}.csv`;
@@ -208,7 +226,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({ currentUser }) => {
                        <button 
                         key={employee.id}
                         onClick={() => handleEmployeeChange(employee)} 
-                        className={`px-3 py-1 text-sm rounded-md ${selectedEmployee.id === employee.id ? 'bg-brand-primary text-white' : 'bg-white dark:bg-slate-700'}`}
+                        className={`px-3 py-1 text-sm rounded-full transition-colors ${selectedEmployee.id === employee.id ? 'bg-brand-primary text-white font-semibold shadow' : 'bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600'}`}
                        >
                         {employee.name}
                        </button>
@@ -238,6 +256,13 @@ const ManagerView: React.FC<ManagerViewProps> = ({ currentUser }) => {
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedEmployee.name}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{selectedEmployee.role}</p>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Training: <span className="font-semibold">{selectedEmployee.training}</span></p>
+                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <label className="text-sm font-medium text-slate-600 dark:text-slate-300 block mb-1">Training Effectiveness Rating:</label>
+                                <EditableStarRating 
+                                    score={selectedEmployee.trainingEffectiveness || 0}
+                                    onScoreChange={handleEffectivenessChange}
+                                />
+                            </div>
                         </div>
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
                             <h3 className="text-lg font-semibold text-center mb-4">Employee Proficiency</h3>
