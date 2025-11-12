@@ -1,0 +1,5 @@
+{
+  "name": "ProficiencyPro",
+  "description": "An intelligent dashboard to track employee post-training proficiency, identify skill gaps, and generate actionable development plans.",
+  "requestFramePermissions": []
+}
